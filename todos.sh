@@ -5,7 +5,7 @@ cd home/
 cd ec2-user/
 mkdir entrenamiento
 cd entrenamiento/
-git clone https://github.com/bortizf/microservice-app-example.git
+sudo git clone https://github.com/bortizf/microservice-app-example.git
 sudo chmod -R ugo+rwx microservice-app-example/
 cd microservice-app-example/todos-api/
 #instalando nvm
@@ -20,4 +20,6 @@ nvm use 8.17.0
 #building
 npm install
 npm audit fix
-JWT_SECRET=PRFT TODO_API_PORT=8082 npm start
+npm install node-fetch@2.6.1
+JWT_SECRET=PRFT TODO_API_PORT=8082 npm start&
+#npm audit fix --force

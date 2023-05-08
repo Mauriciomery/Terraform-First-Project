@@ -232,13 +232,41 @@ resource "aws_security_group" "MM-Front-SG" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32"]
+    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32", "181.78.3.133/32"]
+    #security_groups = aws_launch_template.MM-Ansible-LT.security_group_names
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "ssh"
+    security_groups = aws_launch_template.MM-Ansible-LT.security_group_names
+  }
+  ingress {
+    from_port = 8019
+    to_port   = 9051
+    protocol  = "tcp"
+    # allow traffic from the internal load balancer
+    #security_groups = [aws_lb.MM-Internal-LB.security_groups]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
   }
   
   egress {
     from_port   = 0
     to_port     = 65535
     protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+   egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "All"
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
@@ -328,6 +356,21 @@ resource "aws_security_group" "MM-External-LB-SG" {
     to_port   = 9050
     protocol  = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "All"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -353,6 +396,13 @@ resource "aws_launch_template" "MM-Users-api-LT" {
   user_data        = "${base64encode(data.template_file.users_data.rendered)}"
   vpc_security_group_ids = ["${aws_security_group.MM-Users-api-SG.id}"]
 
+  /* network_interfaces {
+    associate_public_ip_address = true
+    device_index = 0
+    security_groups = ["${aws_security_group.MM-Users-api-SG.id}"]
+    //subnet_id = aws_subnet.public-subnet-1a.id
+  }*/
+
   tag_specifications {
     resource_type = "instance"
     tags = {
@@ -377,7 +427,7 @@ resource "aws_launch_template" "MM-Users-api-LT" {
 resource "aws_security_group" "MM-Users-api-SG" {
   name = "MM-Users-api-SG"
   vpc_id = aws_vpc.MM-VPC.id
-  description = "Security group for Front LT"
+  description = "Security group for Users Api LT"
   ingress {
     from_port   = 8083
     to_port     = 8083
@@ -385,17 +435,39 @@ resource "aws_security_group" "MM-Users-api-SG" {
     cidr_blocks = ["0.0.0.0/0"]
     security_groups = aws_lb.MM-Internal-LB.security_groups
   }
+   ingress {
+    from_port   = 8084
+    to_port     = 8090
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  ingress {
+    from_port = 8019
+    to_port   = 8090
+    protocol  = "tcp"
+    # allow traffic from the internal load balancer
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32"]
+    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32","10.0.101.0/24", "10.0.102.0/24"]
   }
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+
   
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "All"
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
@@ -409,7 +481,8 @@ resource "aws_security_group" "MM-Users-api-SG" {
 #Creating the first ASG with Users LT
 resource "aws_autoscaling_group" "MM-Users-api-ASG" {
   name                 = "MM-Users-api-ASG"
-  vpc_zone_identifier = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
+  vpc_zone_identifier = [aws_subnet.private-subnet-1a.id, aws_subnet.private-subnet-1b.id]
+  #vpc_zone_identifier = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
   launch_template {
     id      = "${aws_launch_template.MM-Users-api-LT.id}"
     version = "${aws_launch_template.MM-Users-api-LT.latest_version}"
@@ -474,13 +547,27 @@ resource "aws_security_group" "MM-Auth-api-SG" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32"]
+    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32","10.0.101.0/24", "10.0.102.0/24"]
   }
-  
+  ingress {
+    from_port = 8019
+    to_port   = 8090
+    protocol  = "tcp"
+    # allow traffic from the internal load balancer
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  ingress {
+  from_port   = -1
+  to_port     = -1
+  protocol    = "icmp"
+  cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+  security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "All"
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
@@ -494,7 +581,7 @@ resource "aws_security_group" "MM-Auth-api-SG" {
 #Creating the first ASG with Auth LT
 resource "aws_autoscaling_group" "MM-Auth-api-ASG" {
   name                 = "MM-Auth-api-ASG"
-  vpc_zone_identifier = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
+  vpc_zone_identifier = [aws_subnet.private-subnet-1a.id, aws_subnet.private-subnet-1b.id]
   launch_template {
     id      = "${aws_launch_template.MM-Auth-api-LT.id}"
     version = "${aws_launch_template.MM-Auth-api-LT.latest_version}"
@@ -558,13 +645,27 @@ resource "aws_security_group" "MM-TODOs-api-SG" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32"]
+    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32","10.0.101.0/24", "10.0.102.0/24"]
   }
-  
+  ingress {
+    from_port = 8019
+    to_port   = 8090
+    protocol  = "tcp"
+    # allow traffic from the internal load balancer
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  ingress {
+  from_port   = -1
+  to_port     = -1
+  protocol    = "icmp"
+  cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+  security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "All"
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
@@ -578,7 +679,7 @@ resource "aws_security_group" "MM-TODOs-api-SG" {
 #Creating the first ASG with TODOs LT
 resource "aws_autoscaling_group" "MM-TODOs-api-ASG" {
   name                 = "MM-TODOs-api-ASG"
-  vpc_zone_identifier = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
+  vpc_zone_identifier = [aws_subnet.private-subnet-1a.id, aws_subnet.private-subnet-1b.id]
   launch_template {
     id      = "${aws_launch_template.MM-TODOs-api-LT.id}"
     version = "${aws_launch_template.MM-TODOs-api-LT.latest_version}"
@@ -586,8 +687,8 @@ resource "aws_autoscaling_group" "MM-TODOs-api-ASG" {
 
   target_group_arns = ["${aws_lb_target_group.MM-Internal-LB-TG3.arn}"]
 
-  min_size = 1
-  max_size = 2
+  min_size = 2
+  max_size = 3
 
 }
 
@@ -641,13 +742,28 @@ resource "aws_security_group" "MM-LogMP-SG" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32"]
+    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32","10.0.101.0/24", "10.0.102.0/24", "181.78.3.133/32"]
   }
+  ingress {
+    from_port = 6379
+    to_port   = 6381
+    protocol  = "tcp"
+    # allow traffic from the internal load balancer
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  ingress {
+  from_port   = -1
+  to_port     = -1
+  protocol    = "icmp"
+  cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+  security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+
   
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "All"
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
@@ -661,7 +777,7 @@ resource "aws_security_group" "MM-LogMP-SG" {
 #Creating the first ASG with LogMP LT
 resource "aws_autoscaling_group" "MM-LogMP-ASG" {
   name                 = "MM-LogMP-ASG"
-  vpc_zone_identifier = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
+  vpc_zone_identifier = [aws_subnet.private-subnet-1a.id, aws_subnet.private-subnet-1b.id]
   launch_template {
     id      = "${aws_launch_template.MM-LogMP-LT.id}"
     version = "${aws_launch_template.MM-LogMP-LT.latest_version}"
@@ -684,12 +800,26 @@ resource "aws_autoscaling_group" "MM-LogMP-ASG" {
 resource "aws_security_group" "MM-Internal-LB-SG" {
   name = "MM-Internal-LB-SG"
   vpc_id = aws_vpc.MM-VPC.id
+  
 
   ingress {
     from_port = 8019
     to_port = 8090
     protocol = "tcp"
-    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.101.0/24"]
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+  }
+  /*ingress {
+    from_port = 8019
+    to_port   = 8090
+    protocol  = "tcp"
+    # allow traffic from the External load balancer
+    security_groups = aws_lb.MM-External-LB.security_groups
+  }*/
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "All"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -698,13 +828,27 @@ resource "aws_security_group" "MM-Internal-LB-SG" {
     project = "ramp-up-devops"
   }
 }
+
+#Create a Group rule to allow traffic from external LB to Internal LB
+resource "aws_security_group_rule" "allow_external_lb_traffic" {
+  type        = "ingress"
+  from_port   = 8010
+  to_port     = 9000
+  protocol    = "tcp"
+  security_group_id = aws_security_group.MM-Internal-LB-SG.id
+  # allow traffic from the external load balancer
+  #source_security_group_id = [aws_security_group.MM-External-LB-SG.id]
+  #source_security_group_id = aws_lb.MM-External-LB.security_group_id
+  source_security_group_id = aws_security_group.MM-External-LB-SG.id
+}
+
 # Creamos el LB interno
 
 resource "aws_lb" "MM-Internal-LB" {
   name = "MM-Internal-LB"
   internal = true
   load_balancer_type = "application"
-  subnets = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
+  subnets = [aws_subnet.private-subnet-1a.id, aws_subnet.private-subnet-1b.id]
   security_groups = [aws_security_group.MM-Internal-LB-SG.id]
 
   tags = {
@@ -727,6 +871,8 @@ resource "aws_lb_target_group" "MM-Internal-LB-TG1" {
     path = "/"
     port = "traffic-port"
     protocol = "HTTP"
+    interval = 180
+    timeout = 120
   }
 
   tags = {
@@ -874,5 +1020,197 @@ resource "aws_autoscaling_attachment" "MM-Internal-LB-TGA4" {
   autoscaling_group_name = aws_autoscaling_group.MM-LogMP-ASG.name
   lb_target_group_arn   = aws_lb_target_group.MM-Internal-LB-TG4.arn
 }
+
+
+#Starting Ansible Instance
+# Launch Template for frontend instances
+data "template_file" "ansible_data" {
+  template = "${file("/ansible.sh")}"
+}
+
+resource "aws_launch_template" "MM-Ansible-LT" {
+  name             = "MM-Ansible-LT"
+  image_id         = "ami-005f9685cb30f234b"
+  instance_type    = "t2.micro"
+  key_name = "rampup-mery2"
+  user_data        = "${base64encode(data.template_file.ansible_data.rendered)}"
+  //vpc_security_group_ids = ["${aws_security_group.MM-Ansible-SG.id}"]
+
+   network_interfaces {
+    associate_public_ip_address = true
+    device_index = 0
+    security_groups = ["${aws_security_group.MM-Ansible-SG.id}"]
+    //subnet_id = aws_subnet.public-subnet-1a.id
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+    Name= "MM-Ansible-LT",
+    responsible = "mauricio.merya", 
+    project = "ramp-up-devops", 
+  }
+  }
+  tag_specifications {
+    resource_type = "volume"
+    tags = {
+    Name= "MM-Ansible-LT",
+    responsible = "mauricio.merya", 
+    project = "ramp-up-devops", 
+    }
+  }
+}
+
+# Creating a SG for the Ansible LT
+
+resource "aws_security_group" "MM-Ansible-SG" {
+  name= "MM-Ansible-SG"
+  vpc_id = aws_vpc.MM-VPC.id
+  description = "Security group for Ansible LT"
+  
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32", "181.78.3.133/32"]
+  }
+  ingress {
+    from_port = 9049
+    to_port   = 9051
+    protocol  = "tcp"
+    # allow traffic from the internal load balancer
+    #security_groups = [aws_lb.MM-Internal-LB.security_groups]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24", "10.0.101.0/24", "10.0.102.0/24"]
+    security_groups = aws_lb.MM-Internal-LB.security_groups
+  }
+   egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "All"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    name = "MM-Ansible-SG"
+    responsible = "mauricio.merya"
+    project = "ramp-up-devops"
+  }
+}
+
+
+#Creating the first ASG with front LT
+resource "aws_autoscaling_group" "MM-Ansible-ASG" {
+  name                 = "MM-Ansible-ASG"
+  vpc_zone_identifier = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
+  launch_template {
+    id      = "${aws_launch_template.MM-Ansible-LT.id}"
+    version = "${aws_launch_template.MM-Ansible-LT.latest_version}"
+  }
+
+  #target_group_arns = ["${aws_lb_target_group.MM-External-LB-TG.arn}"]
+
+  min_size = 1
+  max_size = 2
+  
+}
+
+#Jenkins EC2 Instance
+#Starting Jenkins Instance
+# Launch Template for frontend instances
+data "template_file" "jenkins_data" {
+  template = "${file("/jenkins.sh")}"
+}
+
+resource "aws_launch_template" "MM-Jenkins-LT" {
+  name             = "MM-Jenkins-LT"
+  image_id         = "ami-005f9685cb30f234b"
+  instance_type    = "t2.micro"
+  key_name = "rampup-mery2"
+  user_data        = "${base64encode(data.template_file.jenkins_data.rendered)}"
+  //vpc_security_group_ids = ["${aws_security_group.MM-Ansible-SG.id}"]
+
+   network_interfaces {
+    associate_public_ip_address = true
+    device_index = 0
+    security_groups = ["${aws_security_group.MM-Jenkins-SG.id}"]
+    //subnet_id = aws_subnet.public-subnet-1a.id
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+    Name= "MM-Jenkins-LT",
+    responsible = "mauricio.merya", 
+    project = "ramp-up-devops", 
+  }
+  }
+  tag_specifications {
+    resource_type = "volume"
+    tags = {
+    Name= "MM-Jenkins-LT",
+    responsible = "mauricio.merya", 
+    project = "ramp-up-devops", 
+    }
+  }
+}
+
+# Creating a SG for the Jenkins LT
+
+resource "aws_security_group" "MM-Jenkins-SG" {
+  name= "MM-Jenkins-SG"
+  vpc_id = aws_vpc.MM-VPC.id
+  description = "Security group for Ansible LT"
+  
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["190.158.28.26/32", "190.158.28.63/32", "181.78.3.133/32"]
+  }
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+   egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "All"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    name = "MM-Jenkins-SG"
+    responsible = "mauricio.merya"
+    project = "ramp-up-devops"
+  }
+}
+
+
+#Creating the first ASG with front LT
+resource "aws_autoscaling_group" "MM-Jenkins-ASG" {
+  name                 = "MM-Jenkins-ASG"
+  vpc_zone_identifier = [aws_subnet.public-subnet-1a.id, aws_subnet.public-subnet-1b.id]
+  launch_template {
+    id      = "${aws_launch_template.MM-Jenkins-LT.id}"
+    version = "${aws_launch_template.MM-Jenkins-LT.latest_version}"
+  }
+
+  #target_group_arns = ["${aws_lb_target_group.MM-External-LB-TG.arn}"]
+
+  min_size = 1
+  max_size = 2
+  
+}
+
+
+
+
 
 
