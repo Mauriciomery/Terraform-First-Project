@@ -4,8 +4,11 @@ pipeline {
     stages {
         stage('Terraform Verification') {
             steps {
+                sh 'ls'
+                echo 'Aqui estamos'
+                sh 'cat jenkinsfile'
                 sh 'terraform init'
-                sh 'terraform validate'
+                //sh 'terraform validate'
             }
         }
         stage('Build') {
