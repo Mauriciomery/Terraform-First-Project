@@ -6,9 +6,27 @@ pipeline {
             steps {
                 sh 'ls'
                 echo 'Aqui estamos'
-                sh 'cat jenkinsfile'
+                sh 'cat Jenkinsfile'
                 sh 'terraform init'
                 //sh 'terraform validate'
+            }
+        }
+        stage('Verify Tag') {
+            steps {
+                sh 'grep -q "responsible = "mauricio.merya"" main.tf'
+                echo 'Llegamos hasta validar tag' 
+            }
+        }
+        stage('Handle Result') {
+            steps {
+                 script {
+                    if (sh(returnStatus: true, script: 'grep -q "responsible = "mauricio.merya"" main.tf') == 0) {
+                        echo 'Tag verification passed!'
+                     } else {
+                        error 'Tag verification failed!'
+                     }
+                }
+                echo 'manejar resultado de busqueda de tag' 
             }
         }
         stage('Build') {
