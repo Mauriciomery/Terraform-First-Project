@@ -7,7 +7,7 @@ pipeline {
                 sh 'ls'
                 echo 'Aqui estamos'
                 sh 'cat Jenkinsfile'
-                sh 'terraform init'
+                //sh 'terraform init'
                 //sh 'terraform validate'
             }
         }
