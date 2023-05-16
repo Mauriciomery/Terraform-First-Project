@@ -42,7 +42,7 @@ pipeline {
                     def gitUrl = env.GIT_URL.replace("https://", "https://$env.GITHUB_TOKEN@")
                     sh "git config --global user.email 'mauricio.mery0527@gmail.com'"
                     sh "git config --global user.name 'Mauriciomery'"
-                    sh "git clone $gitUrl ."
+                    sh "git clone $gitUrl repositorio"
                     sh "git checkout ${env.GIT_BRANCH}"
                     sh "git merge --no-ff ${env.GIT_COMMIT}"
                     sh "git push $gitUrl HEAD:${env.GIT_BRANCH}"
