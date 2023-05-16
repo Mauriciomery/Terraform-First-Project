@@ -21,7 +21,7 @@ pipeline {
         stage('Handle Result') {
             steps {
                  script {
-                    if (sh(returnStatus: true, script: 'grep -q "responsible = "mauricio.merya"" main.tf') == 0) {
+                    if (sh(returnStatus: true, script: 'grep -q "mauricio.merya" main.tf') == 0) {
                         echo 'Tag verification passed!'
                      } else {
                         error 'Tag verification failed!'
