@@ -13,7 +13,8 @@ pipeline {
         }
         stage('Verify Tag') {
             steps {
-                sh 'grep -q "responsible = "mauricio.merya"" main.tf'
+                sh 'grep -q "mauricio.merya" main.tf'
+                sh 'grep -i "mauricio.merya" main.tf'
                 echo 'Llegamos hasta validar tag' 
             }
         }
