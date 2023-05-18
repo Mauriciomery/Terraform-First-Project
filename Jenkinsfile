@@ -38,7 +38,7 @@ pipeline {
             steps {
                 // Add build steps as necessary
                 echo "Aqui se entra a una EC2 instance del FRONT"
-                sh 'sudo ssh -i "rampup-mery2.pem" ec2-user@10.0.102.165'
+                sh 'ssh -i "rampup-mery2.pem" ec2-user@10.0.102.165'
                 sh 'pwd'
                 sh 'touch test1PipelineConnect.txt'
                 sh 'logout' 
