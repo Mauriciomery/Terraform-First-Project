@@ -4,8 +4,10 @@ pipeline {
     stages {
         stage('Terraform Verification') {
             steps {
-                sh 'ls'
+                sh 'pwd'
                 echo 'Aqui estamos'
+                sh 'ls'
+                echo 'Esos son los archivos que hay por el momento'
                 sh 'cat Jenkinsfile'
                 //sh 'terraform init'
                 //sh 'terraform validate'
@@ -16,6 +18,7 @@ pipeline {
                 sh 'grep -q "mauricio.merya" main.tf'
                 sh 'grep -i "mauricio.merya" main.tf'
                 echo 'Llegamos hasta validar tag' 
+                
             }
         }
         stage('Handle Result') {
