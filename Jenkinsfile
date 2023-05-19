@@ -41,7 +41,7 @@ pipeline {
                 def sshCommands = [
                         //"sh 'pwd'",
                         "ls",
-                        "pwd"
+                        "pwd",
                         "touch test1PipelineConnect.txt",
                         // Add more commands as needed
                         "logout"
