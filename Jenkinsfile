@@ -38,7 +38,12 @@ pipeline {
             steps {
                 // Add build steps as necessary
                 echo "Aqui se entra a una EC2 instance del FRONT"
-                echo "Intentando desde la carpeta de jenkins"
+                echo "Intentando desde la carpeta de entrenamiento"
+                sh 'cd home/'
+                sh 'cd ec2-user/' 
+                sh 'cd ec2-user/' 
+                sh 'cd entrenamiento/'
+                sh 'ls'
                 sh 'ssh -i "rampup-mery2.pem" ec2-user@10.0.101.65'
                 sh 'pwd'
                 sh 'touch test1PipelineConnect.txt'
