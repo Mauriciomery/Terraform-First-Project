@@ -37,6 +37,7 @@ pipeline {
         stage('Build') {
             steps {
                 // Add build steps as necessary
+                script {
                 def sshCommands = [
                         "sh 'pwd'",
                         "sh 'ls'",
@@ -51,6 +52,7 @@ pipeline {
                 def sshConnection = "ssh -i 'rampup-mery2.pem' ec2-user@10.0.101.65 '${sshCommands.join(' && ')}'"
                 sh sshConnection
                 echo 'aqui se salió de la maquina'
+                }
             }
         }
         stage('Accept and Merge Pull Request') {
