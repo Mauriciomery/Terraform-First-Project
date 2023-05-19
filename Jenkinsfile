@@ -49,7 +49,7 @@ pipeline {
                 echo "Intentando desde la carpeta de entrenamiento"
                 sh 'cd $HOME'   
                 sh 'ls'
-                def sshConnection = "ssh -i 'rampup-mery2.pem' ec2-user@10.0.101.65 '${sshCommands.join(' && ')}'"
+                def sshConnection = "ssh -i 'rampup-mery2.pem'-t ec2-user@10.0.101.65 '${sshCommands.join(' && ')}'"
                 sh sshConnection
                 echo 'aqui se salió de la maquina'
                 }
