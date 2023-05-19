@@ -5,6 +5,7 @@ pipeline {
         stage('Terraform Verification') {
             steps {
                 sh 'pwd'
+                //  /var/lib/jenkins/workspace/First-PR-Pipeline
                 echo 'Aqui estamos'
                 sh 'ls'
                 echo 'Esos son los archivos que hay por el momento'
@@ -36,7 +37,13 @@ pipeline {
         stage('Build') {
             steps {
                 // Add build steps as necessary
-                echo "Aqui se ejecuta una verificación extra"
+                echo "Aqui se entra a una EC2 instance del FRONT"
+                echo "Intentando desde la carpeta de jenkins"
+                sh 'ssh -i "rampup-mery2.pem" ec2-user@10.0.101.65'
+                sh 'pwd'
+                sh 'touch test1PipelineConnect.txt'
+                sh 'logout' 
+                echo 'aqui se salió de la maquina'
             }
         }
         stage('Accept and Merge Pull Request') {
