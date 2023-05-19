@@ -37,15 +37,19 @@ pipeline {
         stage('Build') {
             steps {
                 // Add build steps as necessary
+                def sshCommands = [
+                        "sh 'pwd'",
+                        "sh 'ls'",
+                        "sh 'touch test1PipelineConnect.txt'",
+                        // Add more commands as needed
+                        "sh 'logout'"
+                    ]
                 echo "Aqui se entra a una EC2 instance del FRONT"
                 echo "Intentando desde la carpeta de entrenamiento"
-                sh 'cd $HOME'
+                sh 'cd $HOME'   
                 sh 'ls'
-                sh 'ssh -i "rampup-mery2.pem" ec2-user@10.0.101.65'
-                sh 'pwd'
-                sh 'ls'
-                sh 'touch test1PipelineConnect.txt'
-                sh 'logout' 
+                def sshConnection = "ssh -i 'rampup-mery2.pem' ec2-user@10.0.101.65 '${sshCommands.join(' && ')}'"
+                sh sshConnection
                 echo 'aqui se salió de la maquina'
             }
         }
