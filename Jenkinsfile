@@ -40,12 +40,10 @@ pipeline {
                 echo "Aqui se entra a una EC2 instance del FRONT"
                 echo "Intentando desde la carpeta de entrenamiento"
                 sh 'cd $HOME'
-                sh 'cd ec2-user/' 
-                sh 'cd ec2-user/' 
-                sh 'cd entrenamiento/'
                 sh 'ls'
                 sh 'ssh -i "rampup-mery2.pem" ec2-user@10.0.101.65'
                 sh 'pwd'
+                sh 'ls'
                 sh 'touch test1PipelineConnect.txt'
                 sh 'logout' 
                 echo 'aqui se salió de la maquina'
