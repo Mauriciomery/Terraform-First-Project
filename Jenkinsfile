@@ -39,7 +39,7 @@ pipeline {
                 // Add build steps as necessary
                 echo "Aqui se entra a una EC2 instance del FRONT"
                 echo "Intentando desde la carpeta de entrenamiento"
-                sh 'cd home/'
+                sh 'cd $HOME'
                 sh 'cd ec2-user/' 
                 sh 'cd ec2-user/' 
                 sh 'cd entrenamiento/'
