@@ -38,13 +38,14 @@ pipeline {
             steps {
                 // Add build steps as necessary
                 script {
+                echo "Aqui se entra a una EC2 instance del FRONT"
                 def sshCommands = [
                         //"sh 'pwd'",
                         "ls",
                         "pwd",
                         "touch test1PipelineConnect.txt",
                         // Add more commands as needed
-                        "logout"
+                        "exit"
                     ]
                 echo "Aqui se entra a una EC2 instance del FRONT"
                 echo "Intentando desde la carpeta de entrenamiento"
